@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:beans="http://www.springframework.org/schema/beans" xmlns:tx="http://www.springframework.org/schema/tx"
+
+       xsi:schemaLocation="
+        http://www.springframework.org/schema/beans  
+        http://www.springframework.org/schema/beans/spring-beans.xsd 
+        http://www.springframework.org/schema/mvc  
+        http://www.springframework.org/schema/mvc/spring-mvc.xsd  
+        http://www.springframework.org/schema/context  
+        http://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/tx
+        http://www.springframework.org/schema/tx/spring-tx.xsd
+        http://mybatis.org/schema/mybatis-spring
+        http://mybatis.org/schema/mybatis-spring.xsd">
+    <!-- spring自动扫描 base-package包或子包中的Java文件 -->
+    <!-- <context:annotation-config /> -->
+
+    <context:component-scan base-package="net.tsingk"/>
+    <mvc:annotation-driven>
+    </mvc:annotation-driven>
+
+    <mvc:resources mapping="/resources/**" location="classpath:/resources/"/>
+    <mvc:resources mapping="/resources/**" location="resources/"/>
+    <mvc:resources mapping="/images/**" location="images/"/>
+    <mvc:resources mapping="/plants/**" location="plants/"/>
+    <mvc:resources mapping="/styles/**" location="styles/"/>
+
+    <mvc:cors>
+        <mvc:mapping path="/**" />
+    </mvc:cors>
+    <beans:bean id="viewResolver"
+                class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="prefix" value="/"/>
+        <property name="suffix" value=".jsp"/>
+    </beans:bean>
+
+
+    <!-- 配置 MultipartResolver ，配置文件上传的属性-->
+    <bean id="multipartResolver"
+          class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+        <property name="defaultEncoding" value="UTF-8" />
+        <property name="maxUploadSize" value="1024000" />
+    </bean>
+
+    <!-- 读取配置文件 -->
+    <bean id="config" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="locations">
+            <list>
+                <value>classpath*:config.properties</value>
+            </list>
+        </property>
+    </bean>
+
+
+    <!-- 一、使用数据库连接池注册数据源,引入相关的配置文件 暂时用c3p0 -->
+    <import resource="c3p0.xml"/>
+
+    <!-- 二、创建mybatis会话工厂 -->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="cpdataSource"/>
+        <property name="configLocation" value="classpath:mybatis-config.xml"></property>
+    </bean>
+    <bean id="transactionManager"
+          class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="cpdataSource"/>
+    </bean>
+    <tx:annotation-driven transaction-manager="transactionManager"/>
+    <!-- 三、创建mybatis会话template -->
+    <bean id="sqlSessionTemplate" class="org.mybatis.spring.SqlSessionTemplate">
+        <constructor-arg index="0" ref="sqlSessionFactory"></constructor-arg>
+    </bean>
+
+    <!-- 注册接口类的bean，使得程序中可以用注解方式获取 -->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="net.tsingk.persist"/>
+    </bean>
+
+
+</beans> 
